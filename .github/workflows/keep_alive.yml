@@ -2,9 +2,8 @@ name: Supabase Keep-Alive Master
 
 on:
   schedule:
-    # Runs at 00:00 every 3rd day to stay ahead of the 7-day pause
     - cron: '0 0 */3 * *'
-  workflow_dispatch: # Allows you to test manually
+  workflow_dispatch:
 
 jobs:
   ping_supabase:
@@ -14,23 +13,27 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Ping Woxpa Database
-        # Ensure your secret WOXPA_DB_URL uses %24 instead of $
+        # Uses your updated secret (with %24 for $)
         run: |
           psql "${{ secrets.WOXPA_DB_URL }}" -c "SELECT 1;"
 
   keep_gh_action_active:
     runs-on: ubuntu-latest
+    # THIS SECTION IS THE FIX:
     permissions:
-      contents: write # Needed to push the heartbeat commit
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Using the persistent token to ensure push rights
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Manual Activity Heartbeat
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          echo "Last successful heartbeat: $(date)" > heartbeat.txt
+          echo "Last heartbeat: $(date)" > heartbeat.txt
           git add heartbeat.txt
-          # Only commit if there are changes to avoid empty error
+          # Only push if there's a change to avoid errors
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update heartbeat [skip ci]" && git push)
