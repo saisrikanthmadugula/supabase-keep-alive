@@ -13,21 +13,20 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Ping Woxpa Database
-        # Uses your updated secret (with %24 for $)
         run: |
           psql "${{ secrets.WOXPA_DB_URL }}" -c "SELECT 1;"
 
   keep_gh_action_active:
     runs-on: ubuntu-latest
-    # THIS SECTION IS THE FIX:
+    # THIS BLOCK IS CRITICAL
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Using the persistent token to ensure push rights
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # This ensures the token is persisted for the push step
+          persist-credentials: true
       
       - name: Manual Activity Heartbeat
         run: |
@@ -35,5 +34,5 @@ jobs:
           git config --local user.name "GitHub Action Bot"
           echo "Last heartbeat: $(date)" > heartbeat.txt
           git add heartbeat.txt
-          # Only push if there's a change to avoid errors
+          # Only push if there are changes to avoid error
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update heartbeat [skip ci]" && git push)
