@@ -1,0 +1,35 @@
+name: Supabase Keep-Alive Master
+
+on:
+  schedule:
+    # Runs at 00:00 every 3rd day
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  ping_supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ping Woxpa Database
+        run: |
+          psql "${{ secrets.WOXPA_DB_URL }}" -c "SELECT 1;"
+        
+      # Optional: Add other projects here
+      # - name: Ping MulyaX
+      #   run: psql "${{ secrets.MulyaX_DB_URL }}" -c "SELECT 1;"
+
+  keep_gh_action_active:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Keepalive Workflow
+        uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          use_api: true
